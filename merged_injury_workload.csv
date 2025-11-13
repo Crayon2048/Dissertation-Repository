@@ -1,0 +1,3 @@
+Player_Age,Player_Weight,Player_Height,Previous_Injuries,Training_Intensity,Recovery_Time,Likelihood_of_Injury,server,Tournament,avg_strokes_per_rally,avg_rally_time,first_serve_ratio,error_rate,total_rallies
+31,77.0,188.0,1,0.85,2,1,Djokovic,Australian Open 2019,4.322916666666667,3.2466666666666417,0.8020833333333334,0.25,96
+32,85.0,185.0,2,0.75,2,1,Nadal,Australian Open 2019,4.090909090909091,2.717454545445416,0.7727272727272727,0.22727272727272727,110
