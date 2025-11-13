@@ -29,7 +29,7 @@ player_stats_ao2019 = {
         "Player_Weight": 85.0,
         "Previous_Injuries": 2,
         "Training_Intensity": 0.75,
-        "Recovery_Time": 2,
+        "Recovery_Time": 3,
     },
 }
 
