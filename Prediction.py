@@ -27,7 +27,7 @@ plt.rcParams["figure.figsize"] = [10, 5]
 # Load Dataset
 # ---------------------------------------------------------------
 # Update this path if needed (for local testing)
-data_path = 'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/injury_data.csv'
+data_path = 'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/merged_injury_workload.csv'
 
 
 if not os.path.exists(data_path):
