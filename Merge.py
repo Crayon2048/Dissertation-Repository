@@ -33,22 +33,6 @@ player_stats_ao2019 = {
     },
 }
 
-# Ensure required column exist 
-
-required_cols = [
-    "Player_Age",
-    "Player_Weight",
-    "Player_Height",
-    "Previous_Injuries",
-    "Training_Intensity",
-    "Recovery_Time",
-    "server", 
-]
-
-for col in required_cols:
-    if col not in injury_data_players.columns:
-        raise KeyError("Expected column '{col}' not found in injury_data Columns present: {list(injury_data_players.columns)}")
-
 #Apply player stats
 for player, stats in player_stats_ao2019.items():
     mask = injury_data_players["server"] == player
@@ -77,30 +61,20 @@ if len(rallies_ao2019) == 0:
     print("No AO2019 specific rallies found - using all rallies instead")
     rallies_ao2019 = rallies_clean
 
-#  6. Compute player-level workload metrics 
+#  6. Create rally level features 
 
-rally_features_ao = (
-    rallies_ao2019.groupby("server")
-    .agg(
-        avg_strokes_per_rally=("strokes", "mean"),
-        avg_rally_time=("totaltime", "mean"),
-        first_serve_ratio=("serve", lambda x: (x == "first").mean()),
-        error_rate=("reason", lambda x: (x == "out").mean()),
-        total_rallies=("rallyid", "count"),
-    )
-    .reset_index()
-)
+rallies_ao2019["is_first_serve"] = (rallies_ao2019["serve"] == "first").astype(int)
+rallies_ao2019["is_error"] = (rallies_ao2019["reason"] == "out").astype(int)
 
-print("Rally-level workload features (AO 2019 or fallback):")
-print(rally_features_ao, "\n")
 
-# 7. Merge injury and rally data
+# 7. Expanded merge (no groupby!)
 
-merged_data = injury_data_players.merge(rally_features_ao, on="server", how="left")
+expanded_merged = rallies_ao2019.merge(injury_data_players, on="server", how="left")
 
 # 8. Save the merged dataset 
 
-merged_path = "C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/merged_injury_workload.csv"
-merged_data.to_csv(merged_path, index=False)
-print("Merged dataset saved as 'merged_injury_workload.csv'")
-print(merged_data)
+expanded_path = "C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/expanded_injury_workload.csv"
+expanded_merged.to_csv(expanded_path, index=False)
+print("Expanded dataset saved:", expanded_path)
+print("Rows", len(expanded_merged))
+print(expanded_merged.head())
