@@ -5,6 +5,7 @@ import seaborn as sns
 import numpy as np
 import sklearn
 from platform import python_version
+
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import ExtraTreesClassifier, AdaBoostClassifier
@@ -39,12 +40,21 @@ print()
 print(f"Python Version: {python_version()}")
 
 # Importing df 
-df = pd.read_csv('C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/injury_data.csv')
+df = pd.read_csv('C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/merged_injury_workload.csv')
+
+# Preview
+print("\nDataset preview:")
+print(df.head())
+
+# =========================
+#  Data Cleaning/ Rounding
+# =========================
+# Apply rounding where applicable (only if columns exist in new dataset)
+for col in ["Player_Weight", "Player_Height", "Training_Intensity"]:
+    if col in df.columns:
+        df[col] = df[col].round(2)
 
 
-df['Player_Weight'] = df['Player_Weight'].round(2)
-df['Player_Height'] = df['Player_Height'].round(2)
-df['Training_Intensity'] = df['Training_Intensity'].round(2)
 
 # View df_vg | Visualizar df_vg
 df.head(5)
