@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 
 
-# Libraries and Python version | Versão das bibliotecas e do Python
+# Libraries and Python version
 library = {
     "Pandas": pd,
     "Matplotlib": matplotlib,
@@ -38,7 +38,7 @@ for nome, library in sorted(library.items()):
 print()
 print(f"Python Version: {python_version()}")
 
-# Importing df | Importando df
+# Importing df 
 df = pd.read_csv('C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/injury_data.csv')
 
 
@@ -49,7 +49,7 @@ df['Training_Intensity'] = df['Training_Intensity'].round(2)
 # View df_vg | Visualizar df_vg
 df.head(5)
 
-# Creating DataFrame with Dtype, Unique, and Null information | Criando Df com informações Dtype, Unique e Null
+# Creating DataFrame with Dtype, Unique, and Null information
 df_info = pd.DataFrame(df.dtypes, columns=['Dtype'])
 df_info['Unique'] = df.nunique().values
 df_info['Null'] = df.isnull().sum().values
@@ -64,23 +64,23 @@ with pd.option_context(
 ):
     print(df.describe())
 
-# Calculate the Body Mass Index (BMI) | Calcular o Índice de Massa Corporal (IMC)
+# Calculate the Body Mass Index (BMI)
 df['BMI'] = df['Player_Weight'] / (df['Player_Height'] / 100) ** 2
 
-# Defining gaps for BMI classification | Definir os intervalos para classificação do IMC
+# Defining gaps for BMI classification
 gaps = [-float('inf'), 18.5, 24.9, 29.9, 34.9, 39.9, float('inf')]
 categories = ['Underweight', 'Normal', 'Overweight', 'Obesity I', 'Obesity II', 'Obesity III']
 
-# Create "BMI_Classification" column | Criar a coluna "Classificação_IMC"
+# Create "BMI_Classification" column
 df['BMI_Classification'] = pd.cut(df['BMI'], bins=gaps, labels=categories, right=False)
 
 df.head(1)
 
-# Finding the youngest and oldest age among athletes | Descobrindo a idade mais nova e mais velha entre os atletas
+# Finding the youngest and oldest age among athletes
 print('Player Age Min: {}'.format(df.Player_Age.min()))
 print('Player Age Max: {}'.format(df.Player_Age.max()))
 
-# Creating columns with grouping | Criando colunas com agrupamento
+# Creating columns with grouping
 df["Age_Group"] = pd.cut(
     df["Player_Age"],
     bins=[18, 22, 26, 30, 34, df["Player_Age"].max()],
@@ -93,84 +93,84 @@ df.head(5)
 def plot_histogram_kde_and_boxplot(dataframe, column, color_column):
     fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
-    # Remove grid and spines | Remover o grid e as bordas
+    # Remove grid and spines
     for ax in axs:
         ax.grid(False)
         for spine in ax.spines.values():
             spine.set_visible(False)
     
-    # Plot histogram (subplot 1) | Plotar histograma (subplot 1)
+    # Plot histogram (subplot 1)
     sns.histplot(data=dataframe, x=column, bins=20, color='skyblue', edgecolor='black', kde=True, ax=axs[0])
 
-    # Add labels | Adicionar rótulos
+    # Add labels
     axs[0].set_xlabel('')
     axs[0].set_ylabel('')
     axs[0].set_title(f'{column} Histogram', weight='bold', size=13)
 
-    # Plot KDE (subplot 2) | Plotar KDE (subplot 2)
+    # Plot KDE (subplot 2)
     sns.kdeplot(data=dataframe, x=column, color='skyblue', fill=True, hue=color_column, palette={0: 'green', 1: 'red'}, ax=axs[1])
     axs[1].set_xlabel('')
     axs[1].set_ylabel('')
     axs[1].set_title(f'{column} Density', weight='bold', size=13)  
 
-    # Plot boxplot (subplot 3) | Plotar boxplot (subplot 3)
+    # Plot boxplot (subplot 3)
     sns.boxplot(data=dataframe[column], orient='h', ax=axs[2])
 
-    # Add labels | Adicionar rótulos 
+    # Add labels
     axs[2].set_xlabel('')
     axs[2].set_ylabel('')
     axs[2].set_title(f'{column} Boxplot', weight='bold', size=13)
    
-    # Adjust layout | Ajustar o layout
+    # Adjust layout
     plt.tight_layout()
 
-    # Display figure | Exibir a figura
+    # Display figure
     plt.show()
 
     
 def plot_dual_chart(dataframe, column1, column2, cat_order=None, y_limit1=None, y_limit2=None):
     fig, axs = plt.subplots(1, 2, figsize=(18, 6))
 
-    # Remove grid and spines | Remover o grid e as bordas
+    # Remove grid and spines
     for ax in axs:
         ax.grid(False)
         for spine in ax.spines.values():
             spine.set_visible(False)
 
-    # Plot histogram | Plotar histograma 
+    # Plot histogram
     sns.histplot(data=dataframe, x=column1, bins=20, color='skyblue', edgecolor='black', kde=True, ax=axs[0])
     axs[0].set_title(f'{column1} Histogram', weight='bold', size=13)
     axs[0].set_xlabel('')
     axs[0].set_ylabel('')
 
-    # Define y limit | Definir limite y
+    # Define y limit
     if y_limit1 is None:
         y_limit1 = dataframe[column1].max() * 1.1  
     axs[0].set_ylim(top=y_limit1)
 
-    # Plot two sets of bars | Plotar os dois conjuntos de barras
+    # Plot two sets of bars
     ax = sns.countplot(data=dataframe, x=column2, hue='Likelihood_of_Injury', palette={0: 'green', 1: 'red'}, ax=axs[1], linewidth=2, order=cat_order)
 
-    # Add labels | Adicionar rótulos 
+    # Add labels
     axs[1].set_xlabel('')
     axs[1].set_ylabel('')
     axs[1].set_title(f'{column2} x Likelihood_of_Injury', weight='bold', size=13)
 
-    # Rotate x-axis labels | Rotacionar os rótulos do eixo x
+    # Rotate x-axis labels
     axs[1].tick_params(axis='x', rotation=0)
 
-    # Remove background grid | Remover a grade de fundo
+    # Remove background grid
     axs[1].grid(False)
 
-    # Add legend | Adicionar legenda
+    # Add legend
     axs[1].legend()
 
-    # Define upper limit | Definir limite superior 
+    # Define upper limit
     if y_limit2 is None:
         y_limit2 = dataframe[column2].value_counts().max() * 1.1  # Max value multiplied by 1.1 to ensure a margin
     axs[1].set_ylim(top=y_limit2)
 
-    # Add values on top of each bar | Adicionar valores em cima de cada barra
+    # Add values on top of each bar
     for p in axs[1].patches:
         height = p.get_height()
         if not np.isnan(height):
@@ -180,10 +180,10 @@ def plot_dual_chart(dataframe, column1, column2, cat_order=None, y_limit1=None, 
             axs[1].annotate("0", (p.get_x() + p.get_width() / 2., 0),
                             ha='center', va='center', xytext=(0, 5), textcoords='offset points', color='black', weight='bold', size=13)
 
-    # Adjust layout | Ajustar layout
+    # Adjust layout
     plt.tight_layout()
 
-    # Display figure | Exibir a figura
+    # Display figure
     plt.show()
 
 plot_dual_chart(df, 'Player_Age', 'Age_Group', cat_order=["18-22", "23-26", "27-30", "31-34", "35+"], y_limit1=130, y_limit2=160)
@@ -216,50 +216,50 @@ one_hot_cols = [
     "Age_Group",
 ]
 
-# Selecting only categorical columns from the DataFrame | Selecionando apenas as colunas categóricas do DataFrame
+# Selecting only categorical columns from the DataFrame 
 df_categorical = df[one_hot_cols]
 
-# Applying OneHotEncoder | Aplicando o OneHotEncoder
+# Applying OneHotEncoder
 encoder = OneHotEncoder()
 encoded_data = encoder.fit_transform(df_categorical)
 
-# Obtaining names of the features generated by OneHotEncoder | Obtendo os nomes das features geradas pelo OneHotEncoder
+# Obtaining names of the features generated by OneHotEncoder
 one_hot_feature_names = encoder.get_feature_names_out(one_hot_cols)
 
-# Creating a DataFrame with transformed features | Criando um DataFrame com as features transformadas
+# Creating a DataFrame with transformed features
 df_encoded = pd.DataFrame(encoded_data.toarray(), columns=one_hot_feature_names)
 
-# Joining DataFrames | Juntar os DataFrames
+# Joining DataFrames
 df_final = pd.concat([df, df_encoded], axis=1)
 
-# Dropping categorical columns | Excluindo colunas categóricas
+# Dropping categorical columns
 df_final.drop(columns=['BMI_Classification', 'Age_Group'], inplace=True)
 
-# Visualizing the first few rows of the final DataFrame | Visualizar as primeiras linhas do DataFrame final
+# Visualizing the first few rows of the final DataFrame
 df_final.head()
 
-# Calculating correlation matrix | Calculando a matriz de correlação
+# Calculating correlation matrix
 correlation_matrix = df_final.corr()
 
-# Plotting heatmap | Plotando o heatmap
+# Plotting heatmap
 plt.figure(figsize=(15, 8))
 sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
 plt.title('Heatmap of Correlation Matrix', weight='bold', size=13)
 plt.show()
 
-# Calculating correlation matrix | Calcular a matriz de correlação
+# Calculating correlation matrix
 correlation_matrix = df_final.corr()
 
-# Selecting only 'Likelihood_of_Injury' column from the correlation matrix | Selecionar apenas a coluna 'Likelihood_of_Injury' da matriz de correlação
+# Selecting only 'Likelihood_of_Injury' column from the correlation matrix 
 correlation_with_likelihood = correlation_matrix['Likelihood_of_Injury']
 
-# Removing the correlation with the 'Likelihood_of_Injury' column | Remover a correlação com a coluna 'Likelihood_of_Injury'
+# Removing the correlation with the 'Likelihood_of_Injury' column
 correlation_with_likelihood = correlation_with_likelihood.drop('Likelihood_of_Injury')
 
-# Sorting correlations in descending order | Ordenar as correlações em ordem decrescente
+# Sorting correlations in descending order
 correlation_with_likelihood = correlation_with_likelihood.sort_values(ascending=False)
 
-# Plotting correlation bar plot | Plotar o gráfico de barras de correlação
+# Plotting correlation bar plot
 plt.figure(figsize=(10, 6))
 sns.barplot(x=correlation_with_likelihood.index, y=correlation_with_likelihood.values, palette='coolwarm')
 plt.xticks(rotation=90, ha='center')  
@@ -270,10 +270,10 @@ plt.title('Correlation of Columns with Likelihood_of_Injury', weight='bold', siz
 plt.tight_layout()
 plt.show()
 
-# Drop columns starting with "Age_Group" | Excluir colunas que começa com "Age_Group"
+# Drop columns starting with "Age_Group"
 df_final = df_final.loc[:, ~df_final.columns.str.startswith('Age_Group')]
 
-# Drop BMI column | Excluir a coluna BMI
+# Drop BMI column
 df_final = df_final.drop(columns=['BMI'])
 
 df_final.head(1)
@@ -281,15 +281,15 @@ df_final.head(1)
 # Features
 X = df_final.drop('Likelihood_of_Injury', axis=1)
 
-# Target variable | Variável alvo
+# Target variable
 y = df_final['Likelihood_of_Injury']
 
-# Split data into training and testing sets | Dividir os dados em conjuntos de treinamento e teste
+# Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
 
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score
 
-# Dictionary models | Dicionário de modelos
+# Dictionary models
 models = {
     "LGBMClassifier": LGBMClassifier(),
     "AdaBoostClassifier": AdaBoostClassifier(),
