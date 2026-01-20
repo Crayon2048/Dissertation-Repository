@@ -40,7 +40,7 @@ print()
 print(f"Python Version: {python_version()}")
 
 # Importing df 
-df = pd.read_csv('C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/merged_injury_workload.csv')
+df = pd.read_csv('C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/expanded_injury_workload.csv')
 
 # Preview
 print("\nDataset preview:")
