@@ -6,14 +6,14 @@ import numpy as np
 import sklearn
 from platform import python_version
 
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import ExtraTreesClassifier, AdaBoostClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.svm import NuSVC
-from sklearn.tree import ExtraTreeClassifier
 from lightgbm import LGBMClassifier
-from sklearn.metrics import classification_report, accuracy_score, recall_score
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import f1_score, classification_report ,confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 
 
