@@ -1,3 +1,14 @@
+# FinalPrediction.py
+# - Loads ATP matches (Jeff Sackmann's dataset) from a CSV file
+# - Builds a player-level dataset (winner + loser rows)
+# - Labels "injury" when score has RET/W/O (loser only)
+# - Plots distributions using histograms, KDE and boxplots
+# - Trains three models this time (ExtraTrees, LightGBM, NuSVC) and evaluates them
+# - Will need to make confustion matrices, ROC (TPR VS FPR) curves,
+#   and an inverted ROC (TNR vs FNR) to visualize "negative" rates 
+
+# Comments included in the code to make each step more understandable
+
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
