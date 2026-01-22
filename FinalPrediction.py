@@ -27,7 +27,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.metrics import f1_score, classification_report ,confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score
 
-
+# Configuration / constants (easy to edit)
+CSV_FILEPATH = 'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/atp_matches_2019.csv'
+RANDOM_STATE = 42
+ROLL_MINUTES_WINDOW = 5 # window for rolling mean of minutes played
+ROLL_INJURIES_WINDOW = 10 # window for rolling sum of previous injuries
 # Libraries and Python version
 library = {
     "Pandas": pd,
