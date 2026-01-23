@@ -4,7 +4,7 @@
 # - Labels "injury" when score has RET/W/O (loser only)
 # - Plots distributions using histograms, KDE and boxplots
 # - Trains three models this time (ExtraTrees, LightGBM, NuSVC) and evaluates them
-# - Will need to make confustion matrices, ROC (TPR VS FPR) curves,
+# - Will need to make confusion matrices, ROC (TPR VS FPR) curves,
 #   and an inverted ROC (TNR vs FNR) to visualize "negative" rates 
 
 # Comments included in the code to make each step more understandable
