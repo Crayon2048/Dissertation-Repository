@@ -32,6 +32,10 @@ CSV_FILEPATH = 'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repo
 RANDOM_STATE = 42
 ROLL_MINUTES_WINDOW = 5 # window for rolling mean of minutes played
 ROLL_INJURIES_WINDOW = 10 # window for rolling sum of previous injuries
+TEST_SIZE = 0.2 # 80/20 train/test split
+
+sns.set(style="whitegrid")
+
 # Libraries and Python version
 library = {
     "Pandas": pd,
@@ -50,15 +54,23 @@ print(f"{'':-^20} | {'':-^10}")
 for nome, library in sorted(library.items()):
     print(f"{nome:<20} | {library.__version__:>10}")
 
-# Python Version    
-print()
-print(f"Python Version: {python_version()}")
+# Helper functions
 
-# Importing df 
-df = pd.read_csv('C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/expanded_injury_workload.csv')
+def load_matches(path):
+    """
+    Load ATP matches from a CSV file and converts tourney_date to a date time (YYYYMMDD) -> Timestamp).
+    This enables time-based features like days since last match. 
+    """
+    # errors="coerce" set bad values to NaT or NaN 
+    df = pd.read_csv(path)
+    df["tourney_date"] = pd.to_datetime(df["tourney_date"].astype(str), format="%Y%m%d", errors="coerce")
+    return df
 
-# Preview
-print("\nDataset preview:")
-print(df.head())
-
-# Dataset cleaning
+def label_injuries_from_scores(matches):
+    """
+    Basic injury heuristic:
+        - If score contains 'RET' or 'W/O', assume the loser retired/withdrew -> injury event.
+        Returns a 0/1 Series aligned to matches rows.
+    """
+    score_str = matches["score"].astype(str)
+    return score_str.str.contain(r"RET|W/O", case=False, na=False).astype(int)
