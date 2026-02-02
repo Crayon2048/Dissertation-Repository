@@ -2,7 +2,8 @@
 # - Loads ATP matches (Jeff Sackmann's dataset) from a CSV file
 # - Builds a player-level dataset (winner + loser rows)
 # - Labels "injury" when score has RET/W/O (loser only)
-# - Plots distributions using histograms, KDE and boxplots
+# - Adds a few basic workload features
+# - Plots distributions using histograms, KDE and boxplots, simple category counts 
 # - Trains three models this time (ExtraTrees, LightGBM, NuSVC) and evaluates them
 # - Will need to make confusion matrices, ROC (TPR VS FPR) curves,
 #   and an inverted ROC (TNR vs FNR) to visualize "negative" rates 
@@ -170,4 +171,59 @@ def plot_feature_distributions(df, col, target_col="Injury"):
     axes[2].set_title(f"{col} Boxplot")
     plt.tight_layout()
     plt.show()
+
+def plot_counts_by_category_and_label(df, column, hue="Injury", order=None, y_limit=None):
+    """
+    Simple count plot for a categorical column split by target label (Injury).
+    Adds labels on top of bars to show counts
+    """
+    if column not in df.columns:
+        return 
+    plt.figure(figsize=(8,4.5))
+    ax = sns.countplot(data=df, x=column, hue=hue, order=order, palette={0:"green", 1:"red"})
+    ax.set_title(f"{column} x {hue}")
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    if y_limit is not None:
+        ax.set_ylim(top=y_limit)
+    for p in ax.patches:
+        height = p.get_height()
+        ax.annotate(str(int(height)), (p.get_x() + p.get_width() / 2.0, height),
+                    ha="center", va="bottom", xytext=(0,3),textcoords="offset points")
+    plt.tight_layout()
+    plt.show()
+
+
+# Main flow
+
+matches = load_matches(CSV_FILEPATH)
+print("Matches loaded:", matches.shape)
+print("\nMatches preview:")
+print(matches.head())
+
+injury_loser = label_injuries_from_scores(matches)
+
+# Build player-level rows and sort for rolling features 
+winners = make_player_rows(matches, injury_loser, side="winner")
+losers = make_player_rows(matches, injury_loser, side="loser")
+players = pd.concat([winners, losers], axis=0, ignore_index=True)
+players = players.sort_values(["player_name", "date"]).reset_index(drop=True)
+
+print("\nPlayer=level dataset preview:")
+print(players.head())
+
+#Quick info table (dtype, unique, null)
+df_info = pd.DataFrame(players.dtypes, columns=["Dtype"])
+df_info["Unique"] = players.nunique().values 
+df_info["Null"] = players.isnull().sum().values
+print("\nplayers info (dtype/unique/null):")
+print(df_info.head(20))
+
+#Workload features 
+players = add_player_workload_features(players)
+
+#Feature distributions
+for c in ["Training_Intensity", "Recovery_Time", "Previous_Injuries", "minutes"]:
+    plot_feature_distributions(players, c, target_col="Injury")
+
 
