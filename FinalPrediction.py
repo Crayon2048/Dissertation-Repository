@@ -222,8 +222,14 @@ print(df_info.head(20))
 #Workload features 
 players = add_player_workload_features(players)
 
-#Feature distributions
+#Feature distributions and Injury Pie Chart
 for c in ["Training_Intensity", "Recovery_Time", "Previous_Injuries", "minutes"]:
     plot_feature_distributions(players, c, target_col="Injury")
 
-
+counts = players["Injury"].value_counts()
+plt.figure(figsize=(4.2,4.3))
+plt.pie(counts, labels=counts.index, autopct="%1.1f%%", startangle=140,
+        colors=["#1a7009", "#af0c0c"])
+plt.title("Injury (0/1) Distribution")
+plt.axis("equal")
+plt.show()
