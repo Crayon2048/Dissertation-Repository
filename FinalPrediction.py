@@ -3,6 +3,7 @@
 # - Builds a player-level dataset (winner + loser rows)
 # - Labels "injury" when score has RET/W/O (loser only)
 # - Adds a few basic workload features
+# - One-hot encodes a few categorical columns with pandas.get_dummies
 # - Plots distributions using histograms, KDE and boxplots, simple category counts 
 # - Trains three models this time (ExtraTrees, LightGBM, NuSVC) and evaluates them
 # - Will need to make confusion matrices, ROC (TPR VS FPR) curves,
@@ -234,3 +235,11 @@ plt.pie(counts, labels=counts.index, autopct="%1.1f%%", startangle=140,
 plt.title("Injury (0/1) Distribution")
 plt.axis("equal")
 plt.show()
+
+# Simple category counts 
+plot_counts_by_category_and_label(players, "surface", hue="Injury")
+plot_counts_by_category_and_label(players, "round", hue="Injury")
+
+# Encode categoricals with get_dummies 
+category_columns = [c for c in ["surface", "round", "tourney_name"] if c in players.columns]
+df = pd.get_dummies(players, columns=category_columns, dummy_na=True)
