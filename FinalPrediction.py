@@ -243,3 +243,11 @@ plot_counts_by_category_and_label(players, "round", hue="Injury")
 # Encode categoricals with get_dummies 
 category_columns = [c for c in ["surface", "round", "tourney_name"] if c in players.columns]
 df = pd.get_dummies(players, columns=category_columns, dummy_na=True)
+
+# Assemble features X and target y
+feature_cols = [
+    "minutes", "Training_Intensity", "Recovery_Time", "Previous_Injuries",
+    "aces", "double_faults", "serve_points", "first_in", "first_won",
+    "second_won", "serve_games", "bp_saved", "bp_faced", "rank", "rank_points", "age", "height_cm",
+]
+
