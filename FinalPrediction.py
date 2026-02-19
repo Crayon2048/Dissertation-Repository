@@ -27,7 +27,7 @@ from sklearn.svm import NuSVC
 from lightgbm import LGBMClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.metrics import f1_score, classification_report ,confusion_matrix
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_curve, roc_auc_score,  precision_recall_curve,average_precision_score
 
 # Configuration / constants (easy to edit)
 CSV_FILEPATH = 'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/atp_matches_2019.csv'
@@ -250,4 +250,20 @@ feature_cols = [
     "aces", "double_faults", "serve_points", "first_in", "first_won",
     "second_won", "serve_games", "bp_saved", "bp_faced", "rank", "rank_points", "age", "height_cm",
 ]
+
+feature_cols = [c for c in feature_cols if c in df.columns]
+X = df[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
+y = df["Injury"].astype(int)
+
+print("\nTarget distribution (raw):")
+print(y.value_counts())
+
+# If no positive/ negative variation, stop
+if y.nunique() < 2:
+    print("\n[Warning] Target is single-class (no variation). Skipping model training")
+    raise SystemExit(0)
+
+# Train/test split
+stratify_arg = y if y.nunique() > 1 else None
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=stratify_arg)
 
