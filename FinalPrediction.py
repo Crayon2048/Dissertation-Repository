@@ -265,5 +265,97 @@ if y.nunique() < 2:
 
 # Train/test split
 stratify_arg = y if y.nunique() > 1 else None
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=stratify_arg)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=stratify_arg
+)
+
+# Models: ExtraTrees, NuSVC (with scaling), LGBM 
+class_frac = y_train.value_counts(normalize=True)
+minority_frac = float(class_frac.min()) if len(class_frac) > 1 else 0.1
+feasible_nu = max(0.01, min(0.49, minority_frac - 1e-3)) # v must be feasible re. class balance
+
+models = {
+    "ExtraTreesClassifier": ExtraTreesClassifier(
+        n_estimators=200,
+        class_weight="balanced",
+        random_state=RANDOM_STATE
+    ),
+    "NuSVC": make_pipeline(
+        StandardScaler(),
+        NuSVC(probability=True, nu=feasible_nu, kernel="rbf")
+    ),
+    "LGBMClassifier": LGBMClassifier(
+        random_state=RANDOM_STATE
+        # Considering class_weight="balanced" for strong imbalance
+    ),
+}
+
+# Train, evaluate, and collect probabilities
+aucs = {}
+probas = {}
+
+print("\n== Model Performance ==")
+for model_name, model in models.items():
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+
+    # Basic metrics 
+    accuracy =  accuracy_score(y_test, predictions)
+    precision = precision_score(y_test, predictions, zero_division=0)
+    recall = recall_score(y_test, predictions, zero_division=0) # TPR (sensitivity)
+    f1 = f1_score(y_test, predictions, zero_division=0)
+
+    # Confusion matrix and negative-side metrics
+    cm = confusion_matrix(y_test, predictions)
+    tn, fp, fn, tp = cm.ravel()
+    # Specificity (TNR) and False Negative Rate (FNR)
+    tnr = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+    fnr = fn / (fn + tp) if (fn + tp) > 0 else 0.0
+
+    print(f"\nModel: {model_name}")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f} (TPR)")
+    print(f"Specific: {tnr:.4f} (TNR)")
+    print(f"FNR: {fnr:.4f}")
+    print(f"F1-score: {f1:.4f}")
+    print("Classification report:")
+    print(classification_report(y_test, predictions, digits=4, zero_division=0))
+
+    # Confusion matrixes
+    plt.figure(figsize=(4.2,3.6))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
+    plt.title(f"Confusion Matrix - {model_name}")
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+    plt.tight_layout()
+    plt.show()
+    
+    # Probabilities for ROC (if no predict_proba, scale decision_function to [0,1])
+    if hasattr(model, "predict_proba"):
+        pos_proba = model.predict_proba(X_test)[:, 1]
+    else:
+        scores = model.decision_function(X_test)
+        pos_proba = (scores - scores.min()) / (scores.max() - scores.min() + 1e-9)
+
+    auc = roc_auc_score(y_test, pos_proba)
+    aucs[model_name] = float(auc)
+    probas[model_name] = pos_proba
+
+# ROC Curve: TPR vs FPR 
+plt.figure(figsize=(7,5.5))
+for model_name, pos_proba in probas.items():
+    fpr, tpr, _ = roc_curve(y_test, pos_proba)
+    auc = roc_auc_score(y_test, pos_proba)
+    plt.plot(fpr, tpr, label=f"{model_name} (AUC={auc:.2f})")
+    
+# Plot the diagonal line
+plt.plot([0, 1], [0, 1], linestyle='--', color='black')
+
+plt.xlabel('False Positive Rate (FPR)')
+plt.ylabel('True Positive Rate (TPR)')
+plt.title('ROC Curves (TPR vs FPR)', weight='bold', size=13)
+plt.legend()
+plt.tight_layout()
+plt.show()
 
