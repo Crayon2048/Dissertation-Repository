@@ -6,8 +6,7 @@
 # - One-hot encodes a few categorical columns with pandas.get_dummies
 # - Plots distributions using histograms, KDE and boxplots, simple category counts 
 # - Trains three models this time (ExtraTrees, LightGBM, NuSVC) and evaluates them
-# - Will need to make confusion matrices, ROC (TPR VS FPR) curves,
-#   and an inverted ROC (TNR vs FNR) to visualize "negative" rates 
+# - Will need to make confusion matrices, ROC (TPR VS FPR) curves
 
 # Comments included in the code to make each step more understandable
 
@@ -30,7 +29,7 @@ from sklearn.metrics import f1_score, classification_report ,confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score,  precision_recall_curve,average_precision_score
 
 # Configuration / constants (easy to edit)
-CSV_FILEPATH = 'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/atp_matches_2019.csv'
+CSV_FILEPATH = r'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/atp_matches_2019.csv'
 RANDOM_STATE = 42
 ROLL_MINUTES_WINDOW = 5  # window for rolling mean of minutes played
 ROLL_INJURIES_WINDOW = 10  # window for rolling sum of previous injuries
@@ -275,7 +274,7 @@ minority_frac = float(class_frac.min()) if len(class_frac) > 1 else 0.1
 feasible_nu = max(0.01, min(0.49, minority_frac - 1e-3)) # v must be feasible re. class balance
 
 models = {
-    "ExtraTreesClassifier": ExtraTreesClassifier(
+    "ExtraTrees": ExtraTreesClassifier(
         n_estimators=200,
         class_weight="balanced",
         random_state=RANDOM_STATE
@@ -284,7 +283,7 @@ models = {
         StandardScaler(),
         NuSVC(probability=True, nu=feasible_nu, kernel="rbf")
     ),
-    "LGBMClassifier": LGBMClassifier(
+    "LGBM": LGBMClassifier(
         random_state=RANDOM_STATE
         # Considering class_weight="balanced" for strong imbalance
     ),
