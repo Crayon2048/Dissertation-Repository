@@ -120,6 +120,8 @@ def make_player_rows(df, injury_loser, side):
     Create a player-centric row for either 'winner' or 'loser' of the match.
     We map the right columns using a prefix (w_ for winner, l_ for loser).
     Only the losing side gets Injury=1 when RET/W/O is detected; winner gets 0.
+    A 'side' column is added so we can filter to losers only later for 
+    match-level evaluation 
     """
     assert side in ("winner", "loser")
     prefix = "w_" if side == "winner" else "l_"
@@ -156,6 +158,8 @@ def make_player_rows(df, injury_loser, side):
         "height_cm": pd.to_numeric(df[ht_col], errors="coerce"),
         "best_of": pd.to_numeric(df["best_of"], errors="coerce"),
         "score": df["score"].astype(str),
+        # Track which side this row came from so we can filter later
+        "side": side,
     })
 
     # Injury label: losers can be 1 if RET/W/O; winner always 0
@@ -169,8 +173,10 @@ def add_workload_features(players_df):
     - Training_Intensity: rolling mean of minutes from previous matches only 
     - Previous_Injuries: rolling sum of past injuries only 
     Missing values are filled with medians for stability
+    Both winner and loser rows are used here so that a player's full
+    match history (wins and losses) informs their workload features correctly
     """
-    # Days since last match
+    # Days since last match per player 
     players_df["Recovery_Time"] = players_df.groupby("player_name")["date"].diff().dt.days
 
     # Rolling mean of minutes - shift(1) ensures current match is excluded 
@@ -248,7 +254,8 @@ print(matches.head())
 # Step 2: Label injuries
 injury_loser = label_injuries_from_scores(matches)
 
-# Step 3: Build player-level rows and sort for rolling features and chronologically
+# Step 3: Build player-level rows, tagging each row with its side (winner/loser)
+# Both sides are kept at this stage so rolling workload features use full history
 winners = make_player_rows(matches, injury_loser, side="winner")
 losers = make_player_rows(matches, injury_loser, side="loser")
 players = pd.concat([winners, losers], axis=0, ignore_index=True)
@@ -265,30 +272,42 @@ print("\nplayers info (dtype/unique/null):")
 print(df_info.head(20))
 
 # Step 4: Add workload features (uses shift(1) - no leakage) 
+# Both winner and loser rows used here so each player's full match history
+# informs their workload features correctly
 players = add_workload_features(players)
 
-# Step 5: EDA plots on the full dataset (all years combined)
+# Step 5: EDA plots on loser rows only (since those are what we model)
+losers_eda = players[players["side"] == "loser"]
+
 for c in ["Training_Intensity", "Recovery_Time", "Previous_Injuries", "minutes"]:
-    plot_feature_distributions(players, c, target_col="Injury")
+    plot_feature_distributions(losers_eda, c, target_col="Injury")
 
 # Adding Injury Pie Chart
-counts = players["Injury"].value_counts()
+counts = losers_eda["Injury"].value_counts()
 plt.figure(figsize=(4.2,4.3))
 plt.pie(counts, labels=counts.index, autopct="%1.1f%%", startangle=140,
         colors=["#1a7009", "#af0c0c"])
-plt.title("Injury (0/1) Distribution")
+plt.title("Injury (0/1) Distribution - Loser Rows Only")
 plt.axis("equal")
 plt.show()
 
 # Simple category counts 
-plot_counts_by_category_and_label(players, "surface", hue="Injury")
-plot_counts_by_category_and_label(players, "round", hue="Injury")
+plot_counts_by_category_and_label(losers_eda, "surface", hue="Injury")
+plot_counts_by_category_and_label(losers_eda, "round", hue="Injury")
 
 # Step 6: Encode categoricals with get_dummies 
 category_columns = [c for c in ["surface", "round", "tourney_name"] if c in players.columns]
 df = pd.get_dummies(players, columns=category_columns, dummy_na=True)
 
-# Step 7: Assemble features X and target y
+# Step 7: Filter to loser rows inly befoore assembling X and y
+# This gives true match-level evaluation - one row per match
+# Winners were kept above so workload features are computed correctly,
+# but they are excluded from the actual prediction task here
+df = df[df["side"] == "loser"].copy()
+
+print(f"\nRows after filtering to losers only: {len(df)}")
+
+# Step  8: Assemble features X and target y
 feature_cols = [
     "minutes", "Training_Intensity", "Recovery_Time", "Previous_Injuries",
     "aces", "double_faults", "serve_points", "first_in", "first_won",
@@ -307,7 +326,7 @@ if y.nunique() < 2:
     print("\n[Warning] Target is single-class (no variation). Skipping model training")
     raise SystemExit(0)
 
-# Step 8: Time-based Train/test split
+# Step 9: Time-based Train/test split
 # Train on TRAIN_YEARS, test on TEST_YEAR
 # This means every test match genuinely occurred after every training match,
 # making this true prospective (forward-looking injury prediction).
@@ -319,9 +338,9 @@ test_mask = df["date"].dt.year == TEST_YEAR # rows from test year
 X_train, y_train = X[train_mask], y[train_mask]
 X_test, y_test = X[test_mask],  y[test_mask]
 
-print(f"\nTime-based split:")
-print(f" Training years: {TRAIN_YEARS} -> {len(X_train)} rows")
-print(f" Test year: {TEST_YEAR} -> {len(X_test)} rows")
+print(f"\nTime-based split (match level - loser rows only):")
+print(f" Training years: {TRAIN_YEARS} -> {len(X_train)} matches")
+print(f" Test year: {TEST_YEAR} -> {len(X_test)} matches")
 print(f"\nTraining injury distribution: \n{y_train.value_counts()}")
 print(f"\nTest injury distribution: \n{y_test.value_counts()}")
 
@@ -331,7 +350,7 @@ if y_train.nunique() < 2 or y_test.nunique() < 2:
           "Check your yearly CSV files are loading correctly.")
     raise SystemExit(0)
 
-# Step 9: Define and train models: ExtraTrees, NuSVC (with scaling), LGBM 
+# Step 10: Define and train models: ExtraTrees, NuSVC (with scaling), LGBM 
 class_frac = y_train.value_counts(normalize=True)
 minority_frac = float(class_frac.min()) if len(class_frac) > 1 else 0.1
 feasible_nu = max(0.01, min(0.49, minority_frac - 1e-3)) # v must be feasible re. class balance
@@ -381,6 +400,8 @@ for model_name, model in models.items():
     print(f"Specific: {tnr:.4f} (TNR)")
     print(f"FNR: {fnr:.4f}")
     print(f"F1-score: {f1:.4f}")
+    print(f"Confusion matrix counts -> TN:{tn} FP:{fp} FN:{fn} TP:{tp}")
+    print(f"Total test matches: {tn+fp+fn+tp}")
     print("Classification report:")
     print(classification_report(y_test, predictions, digits=4, zero_division=0))
 
