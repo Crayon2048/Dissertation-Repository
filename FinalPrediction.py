@@ -261,7 +261,7 @@ losers = make_player_rows(matches, injury_loser, side="loser")
 players = pd.concat([winners, losers], axis=0, ignore_index=True)
 players = players.sort_values(["player_name", "date"]).reset_index(drop=True)
 
-print("\nPlayer=level dataset preview:")
+print("\nPlayer-level dataset preview:")
 print(players.head())
 
 #Quick info table (dtype, unique, null)
@@ -277,7 +277,10 @@ print(df_info.head(20))
 players = add_workload_features(players)
 
 # Step 5: EDA plots on loser rows only (since those are what we model)
-losers_eda = players[players["side"] == "loser"]
+losers_eda = players[
+    (players["side"] == "loser") &
+    (players["date"].dt.year.isin(TRAIN_YEARS))
+]
 
 for c in ["Training_Intensity", "Recovery_Time", "Previous_Injuries", "minutes"]:
     plot_feature_distributions(losers_eda, c, target_col="Injury")
@@ -307,7 +310,7 @@ df = df[df["side"] == "loser"].copy()
 
 print(f"\nRows after filtering to losers only: {len(df)}")
 
-# Step  8: Assemble features X and target y
+# Step 8: Assemble features X and target y
 feature_cols = [
     "minutes", "Training_Intensity", "Recovery_Time", "Previous_Injuries",
     "aces", "double_faults", "serve_points", "first_in", "first_won",
