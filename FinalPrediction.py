@@ -1,39 +1,59 @@
 # FinalPrediction.py
-# - Loads ATP matches (Jeff Sackmann's dataset) from a CSV file
+# - Loads ATP matches (Jeff Sackmann's dataset) from multiple yearly CSV fileS
 # - Builds a player-level dataset (winner + loser rows)
 # - Labels "injury" when score has RET/W/O (loser only)
-# - Adds a few basic workload features
+# - Adds a few basic workload features and using shift(1) to prevent data leakage 
 # - One-hot encodes a few categorical columns with pandas.get_dummies
+# - Uses a time-based train/test split (train on 2017-2018, test on 2019)
+#   so that the model is trained only on past data and tested on genuinely 
+#   future matches making it at least a true prospective injury prediction
 # - Plots distributions using histograms, KDE and boxplots, simple category counts 
 # - Trains three models this time (ExtraTrees, LightGBM, NuSVC) and evaluates them
-# - Will need to make confusion matrices, ROC (TPR VS FPR) curves
+# - Adding confusion matrices, ROC (TPR VS FPR) curves, and Precision-Recall curve
 
 # Comments included in the code to make each step more understandable
 
+import glob
+import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
-import sklearn
-from platform import python_version
 
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.svm import NuSVC
 from lightgbm import LGBMClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score
-from sklearn.metrics import f1_score, classification_report ,confusion_matrix
-from sklearn.metrics import roc_curve, roc_auc_score,  precision_recall_curve,average_precision_score
+from sklearn.metrics import (
+    accuracy_score, 
+    precision_score, 
+    recall_score,
+    f1_score, 
+    classification_report ,
+    confusion_matrix,
+    roc_curve, 
+    roc_auc_score,  
+    precision_recall_curve,
+    average_precision_score,
+)
 
 # Configuration / constants (easy to edit)
-CSV_FILEPATH = r'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/atp_matches_2019.csv'
+
+# Folder containing all yearly CSV files (e.g. atp_matches_2017, atp_matches_2018.csv etc.)
+# The glob patten below will load all matching files in that folder automatically
+DATSET_FOLDER = r'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/'
+
+# Training years: models will learn from these years only
+TRAIN_YEARS = [2017, 2018]
+
+# Test year: the "future" year the model has never seen during training 
+TEST_YEAR = 2019
+
 RANDOM_STATE = 42
 ROLL_MINUTES_WINDOW = 5  # window for rolling mean of minutes played
 ROLL_INJURIES_WINDOW = 10  # window for rolling sum of previous injuries
-TEST_SIZE = 0.2  # 80/20 train/test split
+
 
 sns.set(style="whitegrid")
 
@@ -43,7 +63,6 @@ libraries = {
     "Matplotlib": matplotlib,
     "Seaborn": sns,
     "NumPy": np,
-    "Scikit-Learn": sklearn,
 }
 
 # Libraries version
@@ -57,15 +76,35 @@ for lib_name, lib_mod in sorted(libraries.items()):
 
 # Helper functions
 
-def load_matches(path):
+def load_all_matches(folder, years):
     """
-    Load ATP matches from a CSV file and converts tourney_date to a date time (YYYYMMDD -> Timestamp).
-    This enables time-based features like days since last match. 
+    Load multiple yearly ATP match CSV files and combine them into one DataFrame.
+    Only loads files for the specified years so we have full control over 
+    what goes into training vs testing.
+    Each file should be named atp_matches_YYYY.csv (Jeff Sackmann format).
+    tourney_data is converted from YYYYMMDD integer to a proper datetime.
     """
-    # errors="coerce" set bad values to NaT or NaN 
-    df = pd.read_csv(path)
-    df["tourney_date"] = pd.to_datetime(df["tourney_date"].astype(str), format="%Y%m%d", errors="coerce")
-    return df
+    all_dfs = []
+    for year in years:
+        pattern = f"{folder}atp_matches_{year}.csv"
+        files = glob.glob(pattern)
+        if not files:
+            print(f"[Warning] No file found for year {year} at: {pattern}")
+            continue
+        for f in files:
+            # errors="coerce" set bad values to NaT or NaN 
+            df = pd.read_csv(f)
+            df["tourney_date"] = pd.to_datetime(df["tourney_date"].astype(str), format="%Y%m%d", errors="coerce")
+            all_dfs.append(df)
+            print(f"Loaded: {f} ({len(df)} matches)")
+    
+    if not all_dfs:
+        raise FileNotFoundError(f"No CSV files found in {folder} for years {years}")
+
+    combined = pd.concat(all_dfs,axis=0, ignore_index=True)
+    print(f"\nTotal matches loaded: {combined.shape[0]} rows across {len(all_dfs)} files(s)")
+    return combined
+
 
 def label_injuries_from_scores(matches):
     """
