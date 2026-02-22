@@ -42,7 +42,7 @@ from sklearn.metrics import (
 
 # Folder containing all yearly CSV files (e.g. atp_matches_2017, atp_matches_2018.csv etc.)
 # The glob patten below will load all matching files in that folder automatically
-DATSET_FOLDER = r'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/'
+DATASET_FOLDER = r'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/'
 
 # Training years: models will learn from these years only
 TRAIN_YEARS = [2017, 2018]
@@ -239,7 +239,7 @@ def plot_counts_by_category_and_label(df, column, hue="Injury", order=None, y_li
 # across the full timeline per player - this is important so that a player's 
 # training intensity heading into a 2019 match correctly reflects their 2018 history
 all_years = TRAIN_YEARS + [TEST_YEAR]
-matches = load_all_matches(DATSET_FOLDER, all_years)
+matches = load_all_matches(DATASET_FOLDER, all_years)
 
 
 print("\nMatches preview:")
