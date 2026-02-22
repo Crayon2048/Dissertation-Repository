@@ -162,24 +162,24 @@ def make_player_rows(df, injury_loser, side):
     out["Injury"] = injury_loser.values if side == "loser" else 0
     return out
 
-def add_player_workload_features(players_df):
+def add_workload_features(players_df):
     """
-    Add simple workload features per player:
-    - Recovery_Time: days since last match (per player)
-    - Training_Intensity: rolling mean of minutes (per player, excluding current match)
-    - Previous_Injuries: rolling sum of past injuries (per player, excluding current match)
+    Add simple workload features per player using only past match data (shift(1) prevents leakage):
+    - Recovery_Time: days since last match
+    - Training_Intensity: rolling mean of minutes from previous matches only 
+    - Previous_Injuries: rolling sum of past injuries only 
     Missing values are filled with medians for stability
     """
     # Days since last match
     players_df["Recovery_Time"] = players_df.groupby("player_name")["date"].diff().dt.days
 
-    # Rolling mean of minutes, using previous matches only
+    # Rolling mean of minutes - shift(1) ensures current match is excluded 
     players_df["Training_Intensity"] = (
         players_df.groupby("player_name")["minutes"]
         .transform(lambda s: s.shift(1).rolling(ROLL_MINUTES_WINDOW, min_periods=1).mean())
     )
 
-    # Rolling sum of prior injuries, using previous matches only
+    # Rolling sum of prior injuries - shift(1) ensures current match is excluded
     players_df["Previous_Injuries"] = (
         players_df.groupby("player_name")["Injury"]
         .transform(lambda s: s.shift(1).rolling(ROLL_INJURIES_WINDOW, min_periods=1).sum())
@@ -235,14 +235,20 @@ def plot_counts_by_category_and_label(df, column, hue="Injury", order=None, y_li
 
 # Main flow
 
-matches = load_matches(CSV_FILEPATH)
-print("Matches loaded:", matches.shape)
+# Step 1: Load all years (train + test combined) so rolling featues are computed
+# across the full timeline per player - this is important so that a player's 
+# training intensity heading into a 2019 match correctly reflects their 2018 history
+all_years = TRAIN_YEARS + [TEST_YEAR]
+matches = load_all_matches(DATSET_FOLDER, all_years)
+
+
 print("\nMatches preview:")
 print(matches.head())
 
+# Step 2: Label injuries
 injury_loser = label_injuries_from_scores(matches)
 
-# Build player-level rows and sort for rolling features 
+# Step 3: Build player-level rows and sort for rolling features and chronologically
 winners = make_player_rows(matches, injury_loser, side="winner")
 losers = make_player_rows(matches, injury_loser, side="loser")
 players = pd.concat([winners, losers], axis=0, ignore_index=True)
@@ -258,10 +264,10 @@ df_info["Null"] = players.isnull().sum().values
 print("\nplayers info (dtype/unique/null):")
 print(df_info.head(20))
 
-#Workload features 
-players = add_player_workload_features(players)
+# Step 4: Add workload features (uses shift(1) - no leakage) 
+players = add_workload_features(players)
 
-#Feature distributions
+# Step 5: EDA plots on the full dataset (all years combined)
 for c in ["Training_Intensity", "Recovery_Time", "Previous_Injuries", "minutes"]:
     plot_feature_distributions(players, c, target_col="Injury")
 
@@ -278,11 +284,11 @@ plt.show()
 plot_counts_by_category_and_label(players, "surface", hue="Injury")
 plot_counts_by_category_and_label(players, "round", hue="Injury")
 
-# Encode categoricals with get_dummies 
+# Step 6: Encode categoricals with get_dummies 
 category_columns = [c for c in ["surface", "round", "tourney_name"] if c in players.columns]
 df = pd.get_dummies(players, columns=category_columns, dummy_na=True)
 
-# Assemble features X and target y
+# Step 7: Assemble features X and target y
 feature_cols = [
     "minutes", "Training_Intensity", "Recovery_Time", "Previous_Injuries",
     "aces", "double_faults", "serve_points", "first_in", "first_won",
@@ -293,7 +299,7 @@ feature_cols = [c for c in feature_cols if c in df.columns]
 X = df[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
 y = df["Injury"].astype(int)
 
-print("\nTarget distribution (raw):")
+print("\nTarget distribution (all years):")
 print(y.value_counts())
 
 # If no positive/ negative variation, stop
@@ -301,13 +307,31 @@ if y.nunique() < 2:
     print("\n[Warning] Target is single-class (no variation). Skipping model training")
     raise SystemExit(0)
 
-# Train/test split
-stratify_arg = y if y.nunique() > 1 else None
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=stratify_arg
-)
+# Step 8: Time-based Train/test split
+# Train on TRAIN_YEARS, test on TEST_YEAR
+# This means every test match genuinely occured after every training match,
+# making this true prospective (forward-looking injury prediction).
+# This is the key different from a random split.
 
-# Models: ExtraTrees, NuSVC (with scaling), LGBM 
+train_mask = df["date"].dt.year.isin(TRAIN_YEARS) # rows from training years
+test_mask = df["date"].dt.year == TEST_YEAR # rows from test year
+
+X_train, y_train = X[train_mask], y[train_mask]
+X_test, y_test = X[test_mask],  y[test_mask]
+
+print(f"\nTime-based split:")
+print(f" Training years: {TRAIN_YEARS} -> {len(X_train)} rows")
+print(f" Test year: {TEST_YEAR} -> {len(X_test)} rows")
+print(f"\nTraining injury distribution: \n{y_train.value_counts()}")
+print(f"\nTest injury distribution: \n{y_test.value_counts()}")
+
+# Safety check - need both classes in train and test
+if y_train.nunique() < 2 or y_test.nunique() < 2:
+    print("\n[Warning] One of the splits has only a single class."
+          "Check your yearly CSV files are loading correctly.")
+    raise SystemExit(0)
+
+# Step 9: Define and train models: ExtraTrees, NuSVC (with scaling), LGBM 
 class_frac = y_train.value_counts(normalize=True)
 minority_frac = float(class_frac.min()) if len(class_frac) > 1 else 0.1
 feasible_nu = max(0.01, min(0.49, minority_frac - 1e-3)) # v must be feasible re. class balance
@@ -324,7 +348,7 @@ models = {
     ),
     "LGBM": LGBMClassifier(
         random_state=RANDOM_STATE
-        # Considering class_weight="balanced" for strong imbalance
+        # class_weight="balanced" # uncomment if injury class is very rare
     ),
 }
 
@@ -332,7 +356,7 @@ models = {
 aucs = {}
 probas = {}
 
-print("\n== Model Performance ==")
+print("\n== Model Performance (Trained on past, tested on future) ==")
 for model_name, model in models.items():
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
@@ -363,7 +387,7 @@ for model_name, model in models.items():
     # Confusion matrixes
     plt.figure(figsize=(4.2,3.6))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
-    plt.title(f"Confusion Matrix - {model_name}")
+    plt.title(f"Confusion Matrix - {model_name}\n(Train: {TRAIN_YEARS} | Test: {TEST_YEAR})")
     plt.xlabel("Predicted")
     plt.ylabel("True")
     plt.tight_layout()
