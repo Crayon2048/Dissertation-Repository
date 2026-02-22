@@ -309,7 +309,7 @@ if y.nunique() < 2:
 
 # Step 8: Time-based Train/test split
 # Train on TRAIN_YEARS, test on TEST_YEAR
-# This means every test match genuinely occured after every training match,
+# This means every test match genuinely occurred after every training match,
 # making this true prospective (forward-looking injury prediction).
 # This is the key different from a random split.
 
