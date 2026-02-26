@@ -440,8 +440,22 @@ plt.plot([0, 1], [0, 1], linestyle='--', color='black')
 
 plt.xlabel('False Positive Rate (FPR)')
 plt.ylabel('True Positive Rate (TPR)')
-plt.title('ROC Curves (TPR vs FPR)', weight='bold', size=13)
+plt.title(f"ROC Curves - Trained on {TRAIN_YEARS}, Tested on {TEST_YEAR}")
 plt.legend()
 plt.tight_layout()
 plt.show()
+
+# Precision Recall Curve (better for rare positives like injuries)
+plt.figure(figsize=(7,5.5))
+for model_name, pos_proba in probas.items():
+   precision_vals, recall_vals, _ = precision_recall_curve(y_test, pos_proba)
+   ap = average_precision_score(y_test, pos_proba)
+   plt.plot(recall_vals, precision_vals, label=f"{model_name} (AP={ap:.2f})")
+plt.xlabel("Recall")
+plt.ylabel("Precision")
+plt.title(f"Precision-Recall Curves - Trained on {TRAIN_YEARS}, Tested on {TEST_YEAR}")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
 
