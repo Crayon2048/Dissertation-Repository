@@ -276,7 +276,7 @@ print(df_info.head(20))
 # informs their workload features correctly
 players = add_workload_features(players)
 
-# Step 5: EDA plots on loser rows only (since those are what we model)
+# Step 5: EDA plots on loser rows only using Train Years (since those are what we model)
 losers_eda = players[
     (players["side"] == "loser") &
     (players["date"].dt.year.isin(TRAIN_YEARS))
