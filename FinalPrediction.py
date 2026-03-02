@@ -45,10 +45,10 @@ from sklearn.metrics import (
 DATASET_FOLDER = r'C:/Users/kleon/OneDrive/Documents/Dissertation/Dissertation-Repository/Datasets/'
 
 # Training years: models will learn from these years only
-TRAIN_YEARS = [2017, 2018]
+TRAIN_YEARS = [2021, 2022]
 
 # Test year: the "future" year the model has never seen during training 
-TEST_YEAR = 2019
+TEST_YEAR = 2023
 
 RANDOM_STATE = 42
 ROLL_MINUTES_WINDOW = 5  # window for rolling mean of minutes played
