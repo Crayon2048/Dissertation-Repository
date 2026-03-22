@@ -20,6 +20,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from platform import python_version
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.ensemble import ExtraTreesClassifier
@@ -73,6 +74,10 @@ print(f"{'':-^20} | {'':-^10}")
 
 for lib_name, lib_mod in sorted(libraries.items()):
     print(f"{lib_name:<20} | {lib_mod.__version__:>10}")
+
+# Python Version
+print()
+print(f"Python Version: {python_version()}")
 
 # Helper functions
 
