@@ -15,3 +15,56 @@ This project builds a machine learning pipeline that predicts whether an ATP ten
 The key methodological decision is a time-based train/test split: models are trained on 2017-2018/ 2021-2022 data and tested on 2019/2023 as genuinely unseen future matches, making this a true prospective injury prediction system rather than a retrospective classification exercise. 
 
 Note: This project does not aim to produce a clinically validated system. It demonstrates the feasibility and potential of AI-driven injury prediction in tennis, and predictions should be interpreted as probabilistic risk indicators rather than definitive diagnoses. 
+
+Research Context
+
+Much of the existing AI-driven injury prediciton research focuses on team sports such as football and basketball, where GPS tracking data, physiological measurements, and detailed medical records are more readily available. Injury prediction models tailored specifically to the unique biomechanical and competitive demands of tennis remain limited. 
+
+This project addresses that gap by adapting machine learning techniques to a tennis specific dataset, priortising sport relevant features such as: match durationm surface type, recovery time, and workload accumulation. That reflect the physical demands unique to professional tennis. 
+
+Dataset
+
+Source: https://github.com/JeffSackmann/tennis_atp 
+Files used: atp_matches_2017.csv, atp_matches_2018.csv, atp_matches_2019, atp_matches_2021.csv, atp_matches_2022.csv, atp_matches_2023.csv. 
+Injury label: A match is flagged as an injury event if the score column contains RET (retirement) or W/O (walkover), affecting the losing player only. 
+All datasets are used in accordance with their licesning terms (Creative Commons Attribution 4.0). No proprietary or sensitive medical data is included. 
+
+Project Structure 
+
+Dissertation Final Code/
+  # FinalPrediction.py
+Dissertation Repository/
+  Datasets/
+    atp_matches_2017.csv 
+    atp_matches_2018.csv
+    atp_matches_2019.csv
+    atp_matches_2021.csv
+    atp_matches_2022.csv 
+    atp_matches_2023.csv. 
+  Screenshots for Testing/
+    After Modifications
+    Before Modificatons
+  FinalPrediction.py
+  Prediction2.py
+  README.md
+
+How It Works
+
+1. Data Loading
+
+2. Injury Labelling
+
+3. Player Level Rows
+
+4. Workload Features
+
+5. Exploratory Data Analysis
+
+6. Match Level Filtering
+
+7. Time based Train/Test Split
+
+8. Models
+
+9. Evaluation
+
