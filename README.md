@@ -16,7 +16,7 @@ This project builds a machine learning pipeline that predicts whether an ATP ten
 
 The key methodological decision is a **time-based train/test split:** models are trained on 2017-2018/ 2021-2022 data and tested on 2019/2023 as genuinely unseen future matches, making this a true prospective injury prediction system rather than a retrospective classification exercise. 
 
-> **Note:** This project does not aim to produce a clinically validated system. It demonstrates the feasibility and potential of AI-driven injury prediction in tennis, and predictions should be interpreted as probabilistic risk indicators rather than definitive diagnoses. 
+Note: This project does not aim to produce a clinically validated system. It demonstrates the feasibility and potential of AI-driven injury prediction in tennis, and predictions should be interpreted as probabilistic risk indicators rather than definitive diagnoses. 
 
 ## Research Context
 
