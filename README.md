@@ -188,3 +188,27 @@ python FinalPrediction.py
 - **Generalisability** - models trained on elite male ATP data may not generalise to female athletes, junior players, or players at different competitive levels 
 - **No medical validation** - predictions are probabilistic indicators of elevated risk, nit clinically validated diagnoses
 - **Single held out year** - evaluation is based on one test year (2023), so no confidence intervals are reported around AUC or Average Precision Values 
+
+--- 
+
+## Ethical Considerations
+
+This projecy adheres to professional codes of conduct outlined by the British Computer Society (BCS) and the Association for Computing Machinery (ACM), as well as the EU Ethics Guidelines for Trustworthy AI. Key ethical considerations include:
+
+- Predictions are framed as decision support tools rather than automated judgements 
+- Model limitations are explicitly communicated to prevent misinterpretation 
+- All datasets are used in accordance with their licensing terms (CC BY 4.0)
+- No proprietary or sensitive personal data is included 
+- The system is not intended to influence selection decisions or disadvantage individual athletes
+- From an EDI perspective, the dataset covers only ATP tour male players, the system should not be applied to WTA, junior, or sub-elite populations without retraining
+- Any deployment in a professional sporting context would require formal legal review, including a Data Protection Impact Assessment under UK GDPR if physiological data were incorporated
+
+---
+
+## Author
+
+**Kleone Gayya** | Student Number: 19293737
+
+Dissertation project - *How can AI help predict possible injuries for tennis athletes to improve performance?*
+
+Version management: [GitHub Repository](https://github.com/Crayon2048/Dissertation-Repository)
