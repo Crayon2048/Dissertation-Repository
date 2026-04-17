@@ -22,7 +22,7 @@ Note: This project does not aim to produce a clinically validated system. It dem
 
 Much of the existing AI-driven injury prediciton research focuses on team sports such as football and basketball, where GPS tracking data, physiological measurements, and detailed medical records are more readily available. Injury prediction models tailored specifically to the unique biomechanical and competitive demands of tennis remain limited. 
 
-This project addresses that gap by adapting machine learning techniques to a tennis specific dataset, priortising sport relevant features such as: match durationm surface type, recovery time, and workload accumulation. That reflect the physical demands unique to professional tennis. 
+This project addresses that gap by adapting machine learning techniques to a tennis specific dataset, priortising sport relevant features such as: match duration surface type, recovery time, and workload accumulation. That reflect the physical demands unique to professional tennis. 
 
 # Dataset
 
@@ -35,7 +35,7 @@ This project addresses that gap by adapting machine learning techniques to a ten
 
 ```
 Dissertation Final Code/
-  FinalPrediction.py
+  FinalPrediction.py.txt
 Dissertation Repository/
   Datasets/
     atp_matches_2017.csv 
@@ -61,10 +61,10 @@ Multiple yearly CSV files are loaded and combined into a single DataFrame. The `
 The score column is scanned for `RET` or `W/O` strings. Any match containing these is flagged as an injury event (Injury = 1). Only the losing players recieves this label since retirements are always recorded as losses. 
 
 ### 3. Player Level Rows
-Each match is expanded into two rows, one for the winner and one for the lose, so that each row captures one player's individual match statistics (aces, double faults, rank, and age). A `side` column tracks whether each row came from the winner or loser perspective. 
+Each match is expanded into two rows, one for the winner and one for the loser, so that each row captures one player's individual match statistics (aces, double faults, rank, and age). A `side` column tracks whether each row came from the winner or loser perspective. 
 
 ### 4. Workload Features
-Three features are engineered per player using only their **past** match history. `shift(1)` is applied throughout to prevent data leakage - the current match is never included in its own feature calculation. Workload accumulation across training and competition has been identified in the literature as a significant contributor to injury risk, particulalry in elite atheltes who compete year round:
+Three features are engineered per player using only their **past** match history. `shift(1)` is applied throughout to prevent data leakage - the current match is never included in its own feature calculation. Workload accumulation across training and competition has been identified in the literature as a significant contributor to injury risk, particulalry in elite athletes who compete year round:
 
 | Feature  | Description |
 | ------------- | ------------- |
@@ -117,7 +117,7 @@ The test set comprised 2,986 loser rows from 2023, of which 96 carried an injury
 | LightGBM  | 46 | 4 | 50 | 47.9% | 92.0% | 0.90 | 0.70 |
 | NuSVC | 48 | 29 | 48 | 50.0% | 62.3% | 0.87 | 0.58 |
 
-ExtraTreesClassifier and LightGBM both acheived an AUC-ROC of 0.90. LightGBM offered the best overall precision-recall balance at the deafult threshold (47.9% recall, 92.0% precision, only 4 false positives), making it the most operationally practical model for deploymenet. NuSVC achieved the highest raw recall (50%) but generated significantly more false positives (29).
+ExtraTreesClassifier and LightGBM both acheived an AUC-ROC of 0.90. LightGBM offered the best overall precision-recall balance at the default threshold (47.9% recall, 92.0% precision, only 4 false positives), making it the most operationally practical model for deploymenet. NuSVC achieved the highest raw recall (50%) but generated significantly more false positives (29).
 
 ---
 
@@ -130,7 +130,7 @@ Winners can never have Injury = 1 in this dataset, so including them would artif
 Without `shift(1)`, the current match's minutes would be included in its own Training_Intensity calculation - information that wouldn't exist at prediction time. This would consistute data leakage and artifically inflate model performance. 
 
 **Why a time-based split instead of random?**
-A random split could place a January 2023 match in the training set and a Decmeber 2022 match in the test set, which makes no sense for prediction. A time-based split ensures every test match genuinley ocured after every training match. 
+A random split could place a January 2023 match in the training set and a December 2022 match in the test set, which makes no sense for prediction. A time-based split ensures every test match genuinley ocured after every training match. 
 
 **Why restrict EDA to training years?**
 Plotting injury patterns from 2023 before model evaluation technically gives prior knowledge of the test set. Restricting EDA to 2021-2022 keeps the methodology clean and fully prospective. 
@@ -183,17 +183,17 @@ python FinalPrediction.py
 
 - **Injury label is a proxy** - RET/W/O in the score column does not always indicate a physical injury. A player may retire due to illness, personal reasons, or tactical decisions in rare cases
 - **No within match physiological data** - all match statistics are recorded at match level, there is no measure of heart rate, movement distance, or perceived exertion
-- **Class imbalance** - injuries are rare events (approximately 3% of matches), which makes them inherently difficuly to predict and means accuracy alone is a misleading metric
+- **Class imbalance** - injuries are rare events (approximately 3% of matches), which makes them inherently difficult to predict and means accuracy alone is a misleading metric
 - **Single sport and tour** - the model is trained only on ATP men's tour level matches and may not generalise to WTA, ITF, Challenger events, or other tennis tours. 
 - **Generalisability** - models trained on elite male ATP data may not generalise to female athletes, junior players, or players at different competitive levels 
-- **No medical validation** - predictions are probabilistic indicators of elevated risk, nit clinically validated diagnoses
+- **No medical validation** - predictions are probabilistic indicators of elevated risk, not clinically validated diagnoses
 - **Single held out year** - evaluation is based on one test year (2023), so no confidence intervals are reported around AUC or Average Precision Values 
 
 --- 
 
 ## Ethical Considerations
 
-This projecy adheres to professional codes of conduct outlined by the British Computer Society (BCS) and the Association for Computing Machinery (ACM), as well as the EU Ethics Guidelines for Trustworthy AI. Key ethical considerations include:
+This project adheres to professional codes of conduct outlined by the British Computer Society (BCS) and the Association for Computing Machinery (ACM), as well as the EU Ethics Guidelines for Trustworthy AI. Key ethical considerations include:
 
 - Predictions are framed as decision support tools rather than automated judgements 
 - Model limitations are explicitly communicated to prevent misinterpretation 
